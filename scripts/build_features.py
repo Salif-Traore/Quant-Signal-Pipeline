@@ -1,49 +1,59 @@
-import os
-import sys
 from pathlib import Path
+import sys
 import pandas as pd
 
-# Add project root to sys.path for module imports
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(PROJECT_ROOT))
 
-from features.base_features import PercentChangeFeature
+RAW_DIR = PROJECT_ROOT / "data" / "raw"
+PREPARED_DIR = PROJECT_ROOT / "data" / "prepared"
 
-def process_ticker_file(parquet_path: Path, price_col_prefix='Close'):
-    print(f"Processing {parquet_path.name} ...")
-    df = pd.read_parquet(parquet_path)
-    print(f"Loaded raw data with {len(df)} rows")
-
-    # Flatten multi-index columns if present
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = [f"{col[0]}_{col[1]}" if col[1] else col[0] for col in df.columns]
-        print(f"Flattened columns: {list(df.columns)}")
-
-    # Determine full price column name for percent change (e.g. Close_AAPL)
-    ticker = parquet_path.stem  # filename without extension
-    price_col = f"{price_col_prefix}_{ticker}"
-
-    if price_col not in df.columns:
-        print(f"Warning: Price column '{price_col}' not found in {parquet_path.name}. Skipping...")
-        return
-
-    # Calculate percent change feature
-    feature = PercentChangeFeature(price_col=price_col)
-    df['pct_change'] = feature.calculate(df)
-
-    # Save processed file
-    output_path = parquet_path.parent.parent / 'prepared' / f"{ticker}_with_features.parquet"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(output_path)
-    print(f"Saved data with features to {output_path}\n")
+def clean_name(name):
+    return name.replace("=", "").replace("^", "")
 
 def main():
-    raw_data_dir = Path(__file__).parent.parent / 'data' / 'raw'
-    parquet_files = list(raw_data_dir.glob("*.parquet"))
+    PREPARED_DIR.mkdir(parents=True, exist_ok=True)
+    frames = []
 
-    print(f"Found {len(parquet_files)} parquet files to process.")
+    for path in sorted(RAW_DIR.glob("*.parquet")):
+        df = pd.read_parquet(path)
 
-    for parquet_file in parquet_files:
-        process_ticker_file(parquet_file)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = [c[0] for c in df.columns]
+
+        df = df.reset_index()
+
+        date_col = "Date" if "Date" in df.columns else df.columns[0]
+        close_col = "Close" if "Close" in df.columns else None
+
+        if close_col is None:
+            print(f"Skipping {path.name}: no Close column")
+            continue
+
+        ticker = clean_name(path.stem)
+
+        out = df[[date_col, close_col]].copy()
+        out.columns = ["Date", "Close"]
+
+        out["Date"] = pd.to_datetime(out["Date"], errors="coerce").dt.tz_localize(None)
+        out["Close"] = pd.to_numeric(out["Close"], errors="coerce")
+        out = out.dropna(subset=["Date", "Close"]).sort_values("Date")
+
+        out["ticker"] = ticker
+        out["daily_return"] = out["Close"].pct_change(fill_method=None)
+        out["ts_momentum_12m"] = out["Close"].pct_change(252, fill_method=None)
+
+        out.to_parquet(PREPARED_DIR / f"{ticker}_with_features.parquet", index=False)
+        frames.append(out)
+
+        print(f"Saved {ticker}_with_features.parquet")
+
+    panel = pd.concat(frames, ignore_index=True)
+    panel = panel.drop_duplicates(["Date", "ticker"])
+    panel["xs_momentum_rank"] = panel.groupby("Date")["ts_momentum_12m"].rank(ascending=False)
+
+    panel.to_parquet(PREPARED_DIR / "all_features.parquet", index=False)
+    print("Saved all_features.parquet")
 
 if __name__ == "__main__":
     main()
