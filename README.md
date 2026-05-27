@@ -122,6 +122,14 @@ raw data
 
 # Generated Outputs
 
+## Equity Curve
+
+![Equity Curve](data/backtests/charts/equity_curve.png)
+
+## Drawdown Curve
+
+![Drawdown Curve](data/backtests/charts/drawdown_curve.png)
+
 The pipeline automatically generates:
 
 ```text
