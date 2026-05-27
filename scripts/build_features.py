@@ -1,59 +1,71 @@
 from pathlib import Path
 import sys
-import pandas as pd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
 
-RAW_DIR = PROJECT_ROOT / "data" / "raw"
-PREPARED_DIR = PROJECT_ROOT / "data" / "prepared"
+import pandas as pd
 
-def clean_name(name):
-    return name.replace("=", "").replace("^", "")
+from configs.config import (
+    PREPARED_DATA_DIR,
+    PROCESSED_DATA_DIR,
+)
+from features.momentum_features import build_features
 
-def main():
-    PREPARED_DIR.mkdir(parents=True, exist_ok=True)
-    frames = []
 
-    for path in sorted(RAW_DIR.glob("*.parquet")):
-        df = pd.read_parquet(path)
+PREPARED_DATA_DIR.mkdir(exist_ok=True)
 
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = [c[0] for c in df.columns]
 
-        df = df.reset_index()
+all_feature_frames = []
 
-        date_col = "Date" if "Date" in df.columns else df.columns[0]
-        close_col = "Close" if "Close" in df.columns else None
+parquet_files = list(PROCESSED_DATA_DIR.glob("*.parquet"))
 
-        if close_col is None:
-            print(f"Skipping {path.name}: no Close column")
-            continue
+for file_path in parquet_files:
 
-        ticker = clean_name(path.stem)
+    ticker = file_path.stem
 
-        out = df[[date_col, close_col]].copy()
-        out.columns = ["Date", "Close"]
+    print(f"Processing {ticker}...")
 
-        out["Date"] = pd.to_datetime(out["Date"], errors="coerce").dt.tz_localize(None)
-        out["Close"] = pd.to_numeric(out["Close"], errors="coerce")
-        out = out.dropna(subset=["Date", "Close"]).sort_values("Date")
+    df = pd.read_parquet(file_path)
 
-        out["ticker"] = ticker
-        out["daily_return"] = out["Close"].pct_change(fill_method=None)
-        out["ts_momentum_12m"] = out["Close"].pct_change(252, fill_method=None)
+    try:
 
-        out.to_parquet(PREPARED_DIR / f"{ticker}_with_features.parquet", index=False)
-        frames.append(out)
+        featured = build_features(df, ticker=ticker)
 
-        print(f"Saved {ticker}_with_features.parquet")
+        output_path = (
+            PREPARED_DATA_DIR
+            / f"{ticker}_with_features.parquet"
+        )
 
-    panel = pd.concat(frames, ignore_index=True)
-    panel = panel.drop_duplicates(["Date", "ticker"])
-    panel["xs_momentum_rank"] = panel.groupby("Date")["ts_momentum_12m"].rank(ascending=False)
+        featured.to_parquet(output_path)
 
-    panel.to_parquet(PREPARED_DIR / "all_features.parquet", index=False)
-    print("Saved all_features.parquet")
+        all_feature_frames.append(featured)
 
-if __name__ == "__main__":
-    main()
+        print(f"Saved {output_path.name}")
+
+    except Exception as e:
+
+        print(f"FAILED: {ticker}")
+        print(e)
+
+
+if all_feature_frames:
+
+    combined = pd.concat(
+        all_feature_frames,
+        ignore_index=True
+    )
+
+    combined_output = (
+        PREPARED_DATA_DIR
+        / "all_features.parquet"
+    )
+
+    combined.to_parquet(combined_output)
+
+    print(
+        f"Saved combined feature dataset: "
+        f"{combined_output.name}"
+    )
+
+print("Feature pipeline complete.")
