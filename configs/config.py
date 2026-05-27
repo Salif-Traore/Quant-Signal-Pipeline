@@ -17,6 +17,16 @@ TICKERS = [
     "TLT", "USO", "XLF", "XLV", "^VIX"
 ]
 
+TRADABLE_TICKERS = [
+    "AAPL", "AGG", "BTC-USD", "EURUSD=X", "GLD",
+    "IWM", "MSFT", "QQQ", "SLV", "SPY",
+    "TLT", "USO", "XLF", "XLV"
+]
+
+REGIME_TICKERS = [
+    "^VIX"
+]
+
 PRICE_COL = "close"
 DATE_COL = "date"
 TICKER_COL = "ticker"
