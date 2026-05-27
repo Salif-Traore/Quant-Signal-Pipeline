@@ -18,6 +18,7 @@ from reports.metrics import (
     calculate_performance_metrics,
     calculate_benchmark_metrics,
     save_metrics_to_csv,
+    calculate_turnover_statistics,
 )
 from reports.charts import plot_equity_curve, plot_drawdown_curve
 
@@ -48,6 +49,8 @@ def main():
         benchmark_ticker="SPY",
         initial_capital=INITIAL_CAPITAL,
     )
+
+    turnover_metrics = calculate_turnover_statistics(backtest_df)
 
     metrics_output = (
         PREPARED_DATA_DIR.parent
@@ -80,6 +83,12 @@ def main():
     print("-" * 30)
 
     for k, v in benchmark_metrics.items():
+        print(f"{k}: {v:.4f}")
+
+    print("\nTurnover Metrics")
+    print("-" * 30)
+
+    for k, v in turnover_metrics.items():
         print(f"{k}: {v:.4f}")
 
     print("\nPipeline complete.")
