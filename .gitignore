@@ -193,3 +193,7 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 data/raw
+data.zip
+data/
+*.parquet
+
