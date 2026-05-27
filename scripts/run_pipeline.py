@@ -19,6 +19,7 @@ from reports.metrics import (
     calculate_benchmark_metrics,
     save_metrics_to_csv,
 )
+from reports.charts import plot_equity_curve, plot_drawdown_curve
 
 
 def main():
@@ -60,6 +61,15 @@ def main():
         metrics_output,
     )
 
+    charts_dir = PREPARED_DATA_DIR.parent / "backtests" / "charts"
+    charts_dir.mkdir(exist_ok=True)
+
+    equity_curve_path = charts_dir / "equity_curve.png"
+    drawdown_curve_path = charts_dir / "drawdown_curve.png"
+
+    plot_equity_curve(backtest_df, equity_curve_path)
+    plot_drawdown_curve(backtest_df, drawdown_curve_path)
+
     print("\nStrategy Performance Metrics")
     print("-" * 30)
 
@@ -75,6 +85,8 @@ def main():
     print("\nPipeline complete.")
     print(f"Saved backtest to: {output_path}")
     print(f"Saved metrics to: {metrics_output}")
+    print(f"Saved equity curve to: {equity_curve_path}")
+    print(f"Saved drawdown curve to: {drawdown_curve_path}")
     print(f"Final capital: {backtest_df['capital'].iloc[-1]:,.2f}")
 
 
