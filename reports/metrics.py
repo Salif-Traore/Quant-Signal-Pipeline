@@ -75,5 +75,16 @@ def save_metrics_to_csv(
     df = pd.DataFrame(rows)
 
     df.to_csv(output_path, index=False)
+def calculate_turnover_statistics(
+    portfolio_df: pd.DataFrame,
+):
+    avg_turnover = portfolio_df["turnover"].mean()
+
+    annualized_turnover = avg_turnover * 252
+
+    return {
+        "average_daily_turnover": avg_turnover,
+        "annualized_turnover": annualized_turnover,
+    }
 
     return df
