@@ -14,7 +14,10 @@ from configs.config import (
 from signals.momentum_signals import build_cross_sectional_momentum_signal
 from portfolio.construction import build_equal_weight_portfolio
 from backtesting.engine import run_vectorized_backtest
-from reports.metrics import calculate_performance_metrics
+from reports.metrics import (
+    calculate_performance_metrics,
+    calculate_benchmark_metrics,
+)
 
 
 def main():
@@ -38,10 +41,22 @@ def main():
 
     metrics = calculate_performance_metrics(backtest_df)
 
-    print("\nPerformance Metrics")
+    benchmark_metrics = calculate_benchmark_metrics(
+        df,
+        benchmark_ticker="SPY",
+        initial_capital=INITIAL_CAPITAL,
+    )
+
+    print("\nStrategy Performance Metrics")
     print("-" * 30)
 
     for k, v in metrics.items():
+        print(f"{k}: {v:.4f}")
+
+    print("\nSPY Benchmark Metrics")
+    print("-" * 30)
+
+    for k, v in benchmark_metrics.items():
         print(f"{k}: {v:.4f}")
 
     print("\nPipeline complete.")
