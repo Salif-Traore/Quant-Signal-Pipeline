@@ -17,6 +17,7 @@ from backtesting.engine import run_vectorized_backtest
 from reports.metrics import (
     calculate_performance_metrics,
     calculate_benchmark_metrics,
+    save_metrics_to_csv,
 )
 
 
@@ -47,6 +48,18 @@ def main():
         initial_capital=INITIAL_CAPITAL,
     )
 
+    metrics_output = (
+        PREPARED_DATA_DIR.parent
+        / "backtests"
+        / "performance_metrics.csv"
+    )
+
+    save_metrics_to_csv(
+        metrics,
+        benchmark_metrics,
+        metrics_output,
+    )
+
     print("\nStrategy Performance Metrics")
     print("-" * 30)
 
@@ -61,6 +74,7 @@ def main():
 
     print("\nPipeline complete.")
     print(f"Saved backtest to: {output_path}")
+    print(f"Saved metrics to: {metrics_output}")
     print(f"Final capital: {backtest_df['capital'].iloc[-1]:,.2f}")
 
 

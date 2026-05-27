@@ -56,3 +56,24 @@ def calculate_benchmark_metrics(
     )
 
     return metrics
+
+
+def save_metrics_to_csv(
+    strategy_metrics: dict,
+    benchmark_metrics: dict,
+    output_path,
+):
+    rows = []
+
+    for k, v in strategy_metrics.items():
+        rows.append({
+            "metric": k,
+            "strategy": v,
+            "benchmark_spy": benchmark_metrics.get(k),
+        })
+
+    df = pd.DataFrame(rows)
+
+    df.to_csv(output_path, index=False)
+
+    return df
