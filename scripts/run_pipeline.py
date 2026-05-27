@@ -12,7 +12,7 @@ from configs.config import (
     TRADABLE_TICKERS,
 )
 from signals.momentum_signals import build_cross_sectional_momentum_signal
-from portfolio.construction import build_equal_weight_portfolio
+from portfolio.construction import build_monthly_rebalanced_portfolio
 from backtesting.engine import run_vectorized_backtest
 from reports.metrics import (
     calculate_performance_metrics,
@@ -30,7 +30,7 @@ def main():
 
     signal_df = build_cross_sectional_momentum_signal(df)
 
-    portfolio_df = build_equal_weight_portfolio(signal_df)
+    portfolio_df = build_monthly_rebalanced_portfolio(signal_df)
 
     backtest_df = run_vectorized_backtest(
         portfolio_df,
