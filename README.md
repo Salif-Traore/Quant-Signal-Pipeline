@@ -2,6 +2,8 @@
 
 A modular quantitative research platform for developing, testing, and evaluating systematic trading strategies across multiple asset classes.
 
+---
+
 ## Overview
 
 This project is designed as a hedge-fund-style research pipeline that:
@@ -18,6 +20,20 @@ The architecture emphasizes modularity, reproducibility, and scalable research w
 
 ---
 
+## Example Output Strategy
+
+```bash
+Strategy Performance Metrics
+------------------------------
+total_return: 1.7197
+annualized_return: 0.2579
+volatility: 0.2553
+sharpe_ratio: 1.0253
+max_drawdown: -0.2784
+```
+
+---
+
 # Strategy
 
 Current strategy implementation:
@@ -25,6 +41,9 @@ Current strategy implementation:
 - Cross-sectional momentum
 - Equal-weight portfolio construction
 - Top-N ranked assets selected daily
+- Daily signal generation
+- Long-only systematic allocation
+- Cross-asset momentum research
 - Benchmark comparison against SPY
 
 Universe includes:
@@ -143,9 +162,35 @@ data/backtests/
 
 ---
 
+## Note
+
+Generated backtest artifacts, parquet datasets, and charts are excluded from version control through `.gitignore`.
+
+To regenerate outputs locally:
+
+```bash
+python scripts/run_pipeline.py
+```
+
+---
+
 # Running The Pipeline
 
 Run the complete research pipeline:
+
+```bash
+python scripts/run_pipeline.py
+```
+
+---
+
+## Rebuild Features
+
+```bash
+python scripts/build_features.py
+```
+
+## Run Full Research Pipeline
 
 ```bash
 python scripts/run_pipeline.py
