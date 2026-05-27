@@ -14,6 +14,7 @@ from configs.config import (
 from signals.momentum_signals import build_cross_sectional_momentum_signal
 from portfolio.construction import build_equal_weight_portfolio
 from backtesting.engine import run_vectorized_backtest
+from reports.metrics import calculate_performance_metrics
 
 
 def main():
@@ -35,7 +36,15 @@ def main():
 
     backtest_df.to_parquet(output_path)
 
-    print("Pipeline complete.")
+    metrics = calculate_performance_metrics(backtest_df)
+
+    print("\nPerformance Metrics")
+    print("-" * 30)
+
+    for k, v in metrics.items():
+        print(f"{k}: {v:.4f}")
+
+    print("\nPipeline complete.")
     print(f"Saved backtest to: {output_path}")
     print(f"Final capital: {backtest_df['capital'].iloc[-1]:,.2f}")
 
