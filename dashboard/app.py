@@ -26,6 +26,7 @@ TOP_N_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "top_n_parameter_sweep.c
 LOOKBACK_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "lookback_sweep.csv"
 VOL_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "volatility_filter_sweep.csv"
 BREADTH_PATH = PROJECT_ROOT / "data" / "research" / "momentum_breadth.csv"
+LIVE_SIGNALS_PATH = PROJECT_ROOT / "data" / "live" / "latest_signals.csv"
 
 
 st.set_page_config(
@@ -71,6 +72,7 @@ def format_pct(x):
 
 def calculate_metrics(df):
     returns = df["portfolio_return"].dropna()
+
     total_return = df["capital"].iloc[-1] / df["capital"].iloc[0] - 1
     annualized_return = (1 + total_return) ** (252 / len(df)) - 1
     volatility = returns.std() * np.sqrt(252)
@@ -123,7 +125,7 @@ def monte_carlo_simulation(returns, starting_capital, horizon_days, n_paths):
 
     simulations = []
 
-    for i in range(n_paths):
+    for _ in range(n_paths):
         sampled_returns = np.random.choice(
             returns,
             size=horizon_days,
@@ -144,7 +146,7 @@ def main():
     st.title("Quant Signal Pipeline Dashboard")
 
     st.caption(
-        "Interactive research dashboard for momentum signals, benchmark comparison, walk-forward validation, parameter sweeps, holdings, and risk diagnostics."
+        "Interactive research dashboard for momentum signals, benchmark comparison, walk-forward validation, parameter sweeps, holdings, live signals, and risk diagnostics."
     )
 
     backtest_df = load_backtest()
@@ -158,6 +160,7 @@ def main():
     lookback_df = load_csv(LOOKBACK_SWEEP_PATH)
     vol_sweep_df = load_csv(VOL_SWEEP_PATH)
     breadth_df = load_csv(BREADTH_PATH)
+    live_signals_df = load_csv(LIVE_SIGNALS_PATH)
 
     min_date = backtest_df["date"].min().date()
     max_date = backtest_df["date"].max().date()
@@ -229,13 +232,14 @@ def main():
     col4.metric("Sharpe Ratio", f"{sharpe:.2f}")
     col5.metric("Max Drawdown", format_pct(max_drawdown))
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
         [
             "Performance",
             "Walk-Forward",
             "Parameter Sweeps",
             "Regime Analysis",
             "Holdings",
+            "Live Signals",
             "Monte Carlo",
             "Downloads",
         ]
@@ -325,11 +329,7 @@ def main():
             .cov(alpha_beta_df["spy_return"])
         )
 
-        rolling_var = (
-            alpha_beta_df["spy_return"]
-            .rolling(63)
-            .var()
-        )
+        rolling_var = alpha_beta_df["spy_return"].rolling(63).var()
 
         alpha_beta_df["rolling_beta_63d"] = rolling_cov / rolling_var
 
@@ -511,6 +511,43 @@ def main():
             st.warning("No current holdings found.")
 
     with tab6:
+        st.subheader("Latest Live Signals")
+
+        if not live_signals_df.empty:
+            live_signals_df["date"] = pd.to_datetime(live_signals_df["date"])
+
+            latest_signal_date = live_signals_df["date"].max()
+
+            st.caption(f"Signal Date: {latest_signal_date.date()}")
+
+            st.dataframe(
+                live_signals_df,
+                use_container_width=True,
+            )
+
+            fig = px.bar(
+                live_signals_df,
+                x="ticker",
+                y="weight",
+                title="Latest Portfolio Weights",
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.download_button(
+                "Download Latest Signals CSV",
+                live_signals_df.to_csv(index=False),
+                file_name="latest_signals.csv",
+                mime="text/csv",
+                key="live_signals_tab_download",
+            )
+
+        else:
+            st.warning(
+                "No live signal file found. Run scripts/generate_live_signals.py first."
+            )
+
+    with tab7:
         st.subheader("Monte Carlo Simulation")
 
         st.write(
@@ -573,11 +610,20 @@ def main():
 
         col1, col2, col3 = st.columns(3)
 
-        col1.metric("5th Percentile Final", f"${final_values.quantile(0.05):,.0f}")
-        col2.metric("Median Final", f"${final_values.quantile(0.50):,.0f}")
-        col3.metric("95th Percentile Final", f"${final_values.quantile(0.95):,.0f}")
+        col1.metric(
+            "5th Percentile Final",
+            f"${final_values.quantile(0.05):,.0f}",
+        )
+        col2.metric(
+            "Median Final",
+            f"${final_values.quantile(0.50):,.0f}",
+        )
+        col3.metric(
+            "95th Percentile Final",
+            f"${final_values.quantile(0.95):,.0f}",
+        )
 
-    with tab7:
+    with tab8:
         st.subheader("Downloadable CSVs")
 
         st.download_button(
@@ -586,6 +632,15 @@ def main():
             file_name="backtest_results.csv",
             mime="text/csv",
         )
+
+        if not live_signals_df.empty:
+            st.download_button(
+                "Download Latest Signals CSV",
+                live_signals_df.to_csv(index=False),
+                file_name="latest_signals.csv",
+                mime="text/csv",
+                key="downloads_tab_live_signals",
+            )
 
         if not walk_forward_df.empty:
             st.download_button(
