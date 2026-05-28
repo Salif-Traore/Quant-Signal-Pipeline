@@ -1,15 +1,27 @@
 from pathlib import Path
+import sys
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import plotly.graph_objects as go
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.append(str(PROJECT_ROOT))
+
+from signals.momentum_signals import build_cross_sectional_momentum_signal
+from portfolio.construction import build_monthly_rebalanced_portfolio
+
 
 BACKTEST_PATH = PROJECT_ROOT / "data" / "backtests" / "portfolio_backtest_clean.parquet"
 METRICS_PATH = PROJECT_ROOT / "data" / "backtests" / "performance_metrics.csv"
+FEATURES_PATH = PROJECT_ROOT / "data" / "prepared" / "all_features.parquet"
+
 WALK_FORWARD_PATH = PROJECT_ROOT / "data" / "research" / "candidate_v2_walk_forward.csv"
+WF_BACKTEST_PATH = PROJECT_ROOT / "data" / "backtests" / "walk_forward" / "walk_forward_backtests.parquet"
+
 TOP_N_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "top_n_parameter_sweep.csv"
 LOOKBACK_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "lookback_sweep.csv"
 VOL_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "volatility_filter_sweep.csv"
@@ -26,7 +38,14 @@ st.set_page_config(
 def load_backtest():
     df = pd.read_parquet(BACKTEST_PATH)
     df["date"] = pd.to_datetime(df["date"])
-    return df
+    return df.sort_values("date")
+
+
+@st.cache_data
+def load_features():
+    df = pd.read_parquet(FEATURES_PATH)
+    df["date"] = pd.to_datetime(df["date"])
+    return df.sort_values(["date", "ticker"])
 
 
 @st.cache_data
@@ -36,36 +55,171 @@ def load_csv(path):
     return pd.DataFrame()
 
 
-def format_pct(value):
-    return f"{value:.2%}"
+@st.cache_data
+def load_parquet(path):
+    if path.exists():
+        df = pd.read_parquet(path)
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"])
+        return df
+    return pd.DataFrame()
+
+
+def format_pct(x):
+    return f"{x:.2%}"
+
+
+def calculate_metrics(df):
+    returns = df["portfolio_return"].dropna()
+    total_return = df["capital"].iloc[-1] / df["capital"].iloc[0] - 1
+    annualized_return = (1 + total_return) ** (252 / len(df)) - 1
+    volatility = returns.std() * np.sqrt(252)
+    sharpe = returns.mean() / returns.std() * np.sqrt(252)
+    drawdown = df["capital"] / df["capital"].cummax() - 1
+    max_drawdown = drawdown.min()
+
+    return total_return, annualized_return, volatility, sharpe, max_drawdown
+
+
+def build_benchmark_equity(features_df, ticker, initial_capital):
+    benchmark = features_df[features_df["ticker"] == ticker].copy()
+    benchmark = benchmark.sort_values("date")
+
+    benchmark[ticker] = (
+        initial_capital
+        * (1 + benchmark["returns"].fillna(0)).cumprod()
+    )
+
+    return benchmark[["date", ticker]]
+
+
+def build_current_holdings(features_df):
+    signal_df = build_cross_sectional_momentum_signal(features_df)
+    portfolio_df = build_monthly_rebalanced_portfolio(signal_df)
+
+    latest_date = portfolio_df["date"].max()
+
+    holdings = portfolio_df[
+        (portfolio_df["date"] == latest_date)
+        & (portfolio_df["weight"] > 0)
+    ].copy()
+
+    keep_cols = [
+        "date",
+        "ticker",
+        "weight",
+        "mom_1m",
+        "vol_1m",
+        "returns",
+    ]
+
+    existing_cols = [c for c in keep_cols if c in holdings.columns]
+
+    return holdings[existing_cols].sort_values("weight", ascending=False)
+
+
+def monte_carlo_simulation(returns, starting_capital, horizon_days, n_paths):
+    returns = returns.dropna().values
+
+    simulations = []
+
+    for i in range(n_paths):
+        sampled_returns = np.random.choice(
+            returns,
+            size=horizon_days,
+            replace=True,
+        )
+
+        capital_path = starting_capital * np.cumprod(1 + sampled_returns)
+
+        simulations.append(capital_path)
+
+    sim_df = pd.DataFrame(simulations).T
+    sim_df.index = range(1, horizon_days + 1)
+
+    return sim_df
 
 
 def main():
     st.title("Quant Signal Pipeline Dashboard")
 
     st.caption(
-        "Momentum strategy research dashboard: performance, walk-forward testing, parameter sweeps, and regime diagnostics."
+        "Interactive research dashboard for momentum signals, benchmark comparison, walk-forward validation, parameter sweeps, holdings, and risk diagnostics."
     )
 
     backtest_df = load_backtest()
+    features_df = load_features()
+
     metrics_df = load_csv(METRICS_PATH)
     walk_forward_df = load_csv(WALK_FORWARD_PATH)
+    wf_backtests_df = load_parquet(WF_BACKTEST_PATH)
+
     top_n_df = load_csv(TOP_N_SWEEP_PATH)
     lookback_df = load_csv(LOOKBACK_SWEEP_PATH)
     vol_sweep_df = load_csv(VOL_SWEEP_PATH)
     breadth_df = load_csv(BREADTH_PATH)
 
+    min_date = backtest_df["date"].min().date()
+    max_date = backtest_df["date"].max().date()
+
+    st.sidebar.header("Dashboard Controls")
+
+    selected_date_range = st.sidebar.date_input(
+        "Date Range",
+        value=(min_date, max_date),
+        min_value=min_date,
+        max_value=max_date,
+    )
+
+    selected_benchmarks = st.sidebar.multiselect(
+        "Benchmarks",
+        options=["SPY", "QQQ"],
+        default=["SPY", "QQQ"],
+    )
+
+    selected_metric = st.sidebar.selectbox(
+        "Primary Metric",
+        options=[
+            "sharpe_ratio",
+            "total_return",
+            "annualized_return",
+            "volatility",
+            "max_drawdown",
+        ],
+        index=0,
+    )
+
+    monte_carlo_paths = st.sidebar.slider(
+        "Monte Carlo Paths",
+        min_value=100,
+        max_value=2000,
+        value=500,
+        step=100,
+    )
+
+    monte_carlo_horizon = st.sidebar.slider(
+        "Monte Carlo Horizon Days",
+        min_value=21,
+        max_value=252,
+        value=126,
+        step=21,
+    )
+
+    if isinstance(selected_date_range, tuple) and len(selected_date_range) == 2:
+        start_date = pd.to_datetime(selected_date_range[0])
+        end_date = pd.to_datetime(selected_date_range[1])
+
+        backtest_df = backtest_df[
+            (backtest_df["date"] >= start_date)
+            & (backtest_df["date"] <= end_date)
+        ].copy()
+
+    initial_capital = backtest_df["capital"].iloc[0]
     latest_capital = backtest_df["capital"].iloc[-1]
-    total_return = latest_capital / backtest_df["capital"].iloc[0] - 1
 
-    returns = backtest_df["portfolio_return"].dropna()
-    annualized_return = (1 + total_return) ** (252 / len(backtest_df)) - 1
-    volatility = returns.std() * (252 ** 0.5)
-    sharpe = returns.mean() / returns.std() * (252 ** 0.5)
-
-    equity = backtest_df["capital"]
-    drawdown = equity / equity.cummax() - 1
-    max_drawdown = drawdown.min()
+    total_return, annualized_return, volatility, sharpe, max_drawdown = (
+        calculate_metrics(backtest_df)
+    )
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -75,24 +229,44 @@ def main():
     col4.metric("Sharpe Ratio", f"{sharpe:.2f}")
     col5.metric("Max Drawdown", format_pct(max_drawdown))
 
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
         [
             "Performance",
             "Walk-Forward",
             "Parameter Sweeps",
             "Regime Analysis",
-            "Raw Data",
+            "Holdings",
+            "Monte Carlo",
+            "Downloads",
         ]
     )
 
     with tab1:
-        st.subheader("Equity Curve")
+        st.subheader("Strategy vs Benchmarks")
+
+        comparison_df = backtest_df[["date", "capital"]].copy()
+        comparison_df = comparison_df.rename(columns={"capital": "Strategy"})
+
+        for ticker in selected_benchmarks:
+            bench = build_benchmark_equity(
+                features_df,
+                ticker,
+                initial_capital,
+            )
+
+            comparison_df = comparison_df.merge(
+                bench,
+                on="date",
+                how="left",
+            )
+
+        plot_cols = ["Strategy"] + selected_benchmarks
 
         fig = px.line(
-            backtest_df,
+            comparison_df,
             x="date",
-            y="capital",
-            title="Strategy Equity Curve",
+            y=plot_cols,
+            title="Strategy vs Benchmarks",
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -100,7 +274,11 @@ def main():
         st.subheader("Drawdown")
 
         drawdown_df = backtest_df[["date"]].copy()
-        drawdown_df["drawdown"] = drawdown
+        drawdown_df["drawdown"] = (
+            backtest_df["capital"]
+            / backtest_df["capital"].cummax()
+            - 1
+        )
 
         fig = px.line(
             drawdown_df,
@@ -118,7 +296,7 @@ def main():
         rolling_df["rolling_sharpe_63d"] = (
             rolling_df["portfolio_return"].rolling(63).mean()
             / rolling_df["portfolio_return"].rolling(63).std()
-        ) * (252 ** 0.5)
+        ) * np.sqrt(252)
 
         fig = px.line(
             rolling_df,
@@ -129,17 +307,70 @@ def main():
 
         st.plotly_chart(fig, use_container_width=True)
 
+        st.subheader("Rolling Alpha / Beta vs SPY")
+
+        spy_returns = features_df[
+            features_df["ticker"] == "SPY"
+        ][["date", "returns"]].rename(columns={"returns": "spy_return"})
+
+        alpha_beta_df = backtest_df[["date", "portfolio_return"]].merge(
+            spy_returns,
+            on="date",
+            how="left",
+        )
+
+        rolling_cov = (
+            alpha_beta_df["portfolio_return"]
+            .rolling(63)
+            .cov(alpha_beta_df["spy_return"])
+        )
+
+        rolling_var = (
+            alpha_beta_df["spy_return"]
+            .rolling(63)
+            .var()
+        )
+
+        alpha_beta_df["rolling_beta_63d"] = rolling_cov / rolling_var
+
+        alpha_beta_df["rolling_alpha_63d"] = (
+            alpha_beta_df["portfolio_return"].rolling(63).mean()
+            - alpha_beta_df["rolling_beta_63d"]
+            * alpha_beta_df["spy_return"].rolling(63).mean()
+        ) * 252
+
+        fig = px.line(
+            alpha_beta_df,
+            x="date",
+            y=["rolling_alpha_63d", "rolling_beta_63d"],
+            title="63-Day Rolling Alpha and Beta vs SPY",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
     with tab2:
-        st.subheader("Candidate V2 Walk-Forward Results")
+        st.subheader("Walk-Forward Results")
 
         if not walk_forward_df.empty:
             st.dataframe(walk_forward_df, use_container_width=True)
 
+            if "fold" in walk_forward_df.columns:
+                selected_fold = st.selectbox(
+                    "Select Fold",
+                    options=walk_forward_df["fold"].unique(),
+                )
+
+                fold_row = walk_forward_df[
+                    walk_forward_df["fold"] == selected_fold
+                ]
+
+                st.write(fold_row)
+
             fig = px.bar(
                 walk_forward_df,
                 x="fold",
-                y="sharpe_ratio",
-                title="Walk-Forward Sharpe by Fold",
+                y=selected_metric,
+                title=f"Walk-Forward {selected_metric} by Fold",
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -162,12 +393,40 @@ def main():
             ]
 
             st.subheader("Average Walk-Forward Metrics")
+
             st.dataframe(
                 walk_forward_df[avg_cols].mean().to_frame("average"),
                 use_container_width=True,
             )
         else:
-            st.warning("No walk-forward file found yet.")
+            st.warning("No walk-forward metrics file found.")
+
+        st.subheader("Fold-by-Fold Equity Curves")
+
+        if not wf_backtests_df.empty and "fold" in wf_backtests_df.columns:
+            selected_folds = st.multiselect(
+                "Select folds to plot",
+                options=sorted(wf_backtests_df["fold"].unique()),
+                default=sorted(wf_backtests_df["fold"].unique()),
+            )
+
+            fold_plot_df = wf_backtests_df[
+                wf_backtests_df["fold"].isin(selected_folds)
+            ].copy()
+
+            fig = px.line(
+                fold_plot_df,
+                x="date",
+                y="capital",
+                color="fold",
+                title="Walk-Forward Equity Curves",
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info(
+                "No fold equity parquet found. Run scripts/run_walk_forward.py to create fold equity curves."
+            )
 
     with tab3:
         st.subheader("Parameter Sweeps")
@@ -179,9 +438,9 @@ def main():
             fig = px.line(
                 top_n_df,
                 x="top_n",
-                y="sharpe_ratio",
+                y=selected_metric,
                 markers=True,
-                title="Top-N vs Sharpe",
+                title=f"Top-N vs {selected_metric}",
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -193,8 +452,8 @@ def main():
             fig = px.bar(
                 lookback_df,
                 x="momentum_col",
-                y="sharpe_ratio",
-                title="Momentum Lookback vs Sharpe",
+                y=selected_metric,
+                title=f"Momentum Lookback vs {selected_metric}",
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -206,9 +465,9 @@ def main():
             fig = px.line(
                 vol_sweep_df,
                 x="vol_quantile",
-                y="sharpe_ratio",
+                y=selected_metric,
                 markers=True,
-                title="Volatility Filter vs Sharpe",
+                title=f"Volatility Filter vs {selected_metric}",
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -228,17 +487,152 @@ def main():
 
             st.plotly_chart(fig, use_container_width=True)
 
-            st.dataframe(breadth_df.tail(20), use_container_width=True)
+            st.dataframe(breadth_df.tail(30), use_container_width=True)
         else:
-            st.warning("No breadth file found yet.")
+            st.warning("No breadth file found.")
 
     with tab5:
-        st.subheader("Backtest Data")
-        st.dataframe(backtest_df, use_container_width=True)
+        st.subheader("Current Holdings Panel")
+
+        holdings_df = build_current_holdings(features_df)
+
+        if not holdings_df.empty:
+            st.dataframe(holdings_df, use_container_width=True)
+
+            fig = px.bar(
+                holdings_df,
+                x="ticker",
+                y="weight",
+                title="Current Portfolio Weights",
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.warning("No current holdings found.")
+
+    with tab6:
+        st.subheader("Monte Carlo Simulation")
+
+        st.write(
+            "Simulation resamples historical strategy daily returns to estimate possible future capital paths."
+        )
+
+        sim_df = monte_carlo_simulation(
+            returns=backtest_df["portfolio_return"],
+            starting_capital=latest_capital,
+            horizon_days=monte_carlo_horizon,
+            n_paths=monte_carlo_paths,
+        )
+
+        percentiles = pd.DataFrame(
+            {
+                "p05": sim_df.quantile(0.05, axis=1),
+                "p50": sim_df.quantile(0.50, axis=1),
+                "p95": sim_df.quantile(0.95, axis=1),
+            }
+        )
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=percentiles.index,
+                y=percentiles["p95"],
+                name="95th Percentile",
+                mode="lines",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=percentiles.index,
+                y=percentiles["p50"],
+                name="Median",
+                mode="lines",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=percentiles.index,
+                y=percentiles["p05"],
+                name="5th Percentile",
+                mode="lines",
+            )
+        )
+
+        fig.update_layout(
+            title="Monte Carlo Projected Capital Range",
+            xaxis_title="Future Trading Days",
+            yaxis_title="Capital",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        final_values = sim_df.iloc[-1]
+
+        col1, col2, col3 = st.columns(3)
+
+        col1.metric("5th Percentile Final", f"${final_values.quantile(0.05):,.0f}")
+        col2.metric("Median Final", f"${final_values.quantile(0.50):,.0f}")
+        col3.metric("95th Percentile Final", f"${final_values.quantile(0.95):,.0f}")
+
+    with tab7:
+        st.subheader("Downloadable CSVs")
+
+        st.download_button(
+            "Download Backtest CSV",
+            backtest_df.to_csv(index=False),
+            file_name="backtest_results.csv",
+            mime="text/csv",
+        )
+
+        if not walk_forward_df.empty:
+            st.download_button(
+                "Download Walk-Forward CSV",
+                walk_forward_df.to_csv(index=False),
+                file_name="walk_forward_results.csv",
+                mime="text/csv",
+            )
+
+        if not top_n_df.empty:
+            st.download_button(
+                "Download Top-N Sweep CSV",
+                top_n_df.to_csv(index=False),
+                file_name="top_n_sweep.csv",
+                mime="text/csv",
+            )
+
+        if not lookback_df.empty:
+            st.download_button(
+                "Download Lookback Sweep CSV",
+                lookback_df.to_csv(index=False),
+                file_name="lookback_sweep.csv",
+                mime="text/csv",
+            )
+
+        if not vol_sweep_df.empty:
+            st.download_button(
+                "Download Volatility Sweep CSV",
+                vol_sweep_df.to_csv(index=False),
+                file_name="volatility_filter_sweep.csv",
+                mime="text/csv",
+            )
+
+        if not breadth_df.empty:
+            st.download_button(
+                "Download Momentum Breadth CSV",
+                breadth_df.to_csv(index=False),
+                file_name="momentum_breadth.csv",
+                mime="text/csv",
+            )
 
         if not metrics_df.empty:
             st.subheader("Metrics CSV")
             st.dataframe(metrics_df, use_container_width=True)
+
+        st.subheader("Raw Backtest Data")
+        st.dataframe(backtest_df, use_container_width=True)
 
 
 if __name__ == "__main__":
