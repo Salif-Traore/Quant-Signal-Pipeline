@@ -13,6 +13,7 @@ from configs.config import (
 )
 
 from signals.momentum_signals import build_cross_sectional_momentum_signal
+from signals.time_series_momentum import build_time_series_momentum_signal
 from portfolio.construction import build_monthly_rebalanced_portfolio
 from backtesting.engine import run_vectorized_backtest
 
@@ -30,10 +31,26 @@ from reports.charts import (
 )
 
 
+STRATEGY_NAME = "cross_sectional"
+# Options:
+# "cross_sectional"
+# "time_series"
+
+
+def build_strategy_signal(df: pd.DataFrame) -> pd.DataFrame:
+    if STRATEGY_NAME == "cross_sectional":
+        return build_cross_sectional_momentum_signal(df)
+
+    if STRATEGY_NAME == "time_series":
+        return build_time_series_momentum_signal(df)
+
+    raise ValueError(f"Unknown strategy: {STRATEGY_NAME}")
+
+
 def main():
     df = pd.read_parquet(PREPARED_DATA_DIR / "all_features.parquet")
 
-    signal_df = build_cross_sectional_momentum_signal(df)
+    signal_df = build_strategy_signal(df)
 
     tradable_signal_df = signal_df[
         signal_df["ticker"].isin(TRADABLE_TICKERS)
@@ -49,7 +66,7 @@ def main():
     output_path = (
         PREPARED_DATA_DIR.parent
         / "backtests"
-        / "portfolio_backtest_clean.parquet"
+        / f"{STRATEGY_NAME}_backtest.parquet"
     )
     output_path.parent.mkdir(exist_ok=True)
 
@@ -68,7 +85,7 @@ def main():
     metrics_output = (
         PREPARED_DATA_DIR.parent
         / "backtests"
-        / "performance_metrics.csv"
+        / f"{STRATEGY_NAME}_performance_metrics.csv"
     )
 
     save_metrics_to_csv(
@@ -80,14 +97,15 @@ def main():
     charts_dir = PREPARED_DATA_DIR.parent / "backtests" / "charts"
     charts_dir.mkdir(exist_ok=True)
 
-    equity_curve_path = charts_dir / "equity_curve.png"
-    drawdown_curve_path = charts_dir / "drawdown_curve.png"
-    rolling_sharpe_path = charts_dir / "rolling_sharpe.png"
+    equity_curve_path = charts_dir / f"{STRATEGY_NAME}_equity_curve.png"
+    drawdown_curve_path = charts_dir / f"{STRATEGY_NAME}_drawdown_curve.png"
+    rolling_sharpe_path = charts_dir / f"{STRATEGY_NAME}_rolling_sharpe.png"
 
     plot_equity_curve(backtest_df, equity_curve_path)
     plot_drawdown_curve(backtest_df, drawdown_curve_path)
     plot_rolling_sharpe(backtest_df, rolling_sharpe_path)
 
+    print(f"\nStrategy: {STRATEGY_NAME}")
     print("\nStrategy Performance Metrics")
     print("-" * 30)
 

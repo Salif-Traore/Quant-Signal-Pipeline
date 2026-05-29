@@ -20,12 +20,15 @@ METRICS_PATH = PROJECT_ROOT / "data" / "backtests" / "performance_metrics.csv"
 FEATURES_PATH = PROJECT_ROOT / "data" / "prepared" / "all_features.parquet"
 
 WALK_FORWARD_PATH = PROJECT_ROOT / "data" / "research" / "candidate_v2_walk_forward.csv"
+PAPER_LEDGER_PATH = PROJECT_ROOT / "data" / "live" / "paper_trading_ledger.csv"
 WF_BACKTEST_PATH = PROJECT_ROOT / "data" / "backtests" / "walk_forward" / "walk_forward_backtests.parquet"
 
 TOP_N_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "top_n_parameter_sweep.csv"
 LOOKBACK_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "lookback_sweep.csv"
 VOL_SWEEP_PATH = PROJECT_ROOT / "data" / "research" / "volatility_filter_sweep.csv"
 BREADTH_PATH = PROJECT_ROOT / "data" / "research" / "momentum_breadth.csv"
+REGIME_WF_PATH = PROJECT_ROOT / "data" / "research" / "candidate_v3_walk_forward.csv"
+REGIME_BACKTEST_PATH = PROJECT_ROOT / "data" / "research" / "candidate_v3_backtests.parquet"
 LIVE_SIGNALS_PATH = PROJECT_ROOT / "data" / "live" / "latest_signals.csv"
 
 
@@ -154,6 +157,8 @@ def main():
 
     metrics_df = load_csv(METRICS_PATH)
     walk_forward_df = load_csv(WALK_FORWARD_PATH)
+    regime_wf_df = load_csv(REGIME_WF_PATH)
+    regime_backtests_df = load_parquet(REGIME_BACKTEST_PATH)
     wf_backtests_df = load_parquet(WF_BACKTEST_PATH)
 
     top_n_df = load_csv(TOP_N_SWEEP_PATH)
@@ -161,6 +166,7 @@ def main():
     vol_sweep_df = load_csv(VOL_SWEEP_PATH)
     breadth_df = load_csv(BREADTH_PATH)
     live_signals_df = load_csv(LIVE_SIGNALS_PATH)
+    paper_ledger_df = load_csv(PAPER_LEDGER_PATH)
 
     min_date = backtest_df["date"].min().date()
     max_date = backtest_df["date"].max().date()
@@ -191,6 +197,13 @@ def main():
         ],
         index=0,
     )
+    selected_strategy_view = st.sidebar.selectbox(
+         "Strategy View",
+         options=[
+         "Production Cross-Sectional",
+         "Regime Scaling Candidate",
+        ],
+    )
 
     monte_carlo_paths = st.sidebar.slider(
         "Monte Carlo Paths",
@@ -199,7 +212,13 @@ def main():
         value=500,
         step=100,
     )
-
+    starting_capital_override = st.sidebar.slider(
+        "Starting Capital",
+        min_value=10_000,
+        max_value=1_000_000,
+        value=100_000,
+        step=10_000,
+    )
     monte_carlo_horizon = st.sidebar.slider(
         "Monte Carlo Horizon Days",
         min_value=21,
@@ -217,7 +236,19 @@ def main():
             & (backtest_df["date"] <= end_date)
         ].copy()
 
-    initial_capital = backtest_df["capital"].iloc[0]
+    original_initial_capital = backtest_df["capital"].iloc[0]
+
+    scale_factor = (
+    starting_capital_override
+    / original_initial_capital
+    )
+
+    backtest_df["capital"] = (
+    backtest_df["capital"]
+    * scale_factor
+    )
+
+    initial_capital = starting_capital_override
     latest_capital = backtest_df["capital"].iloc[-1]
 
     total_return, annualized_return, volatility, sharpe, max_drawdown = (
@@ -232,7 +263,7 @@ def main():
     col4.metric("Sharpe Ratio", f"{sharpe:.2f}")
     col5.metric("Max Drawdown", format_pct(max_drawdown))
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
         [
             "Performance",
             "Walk-Forward",
@@ -240,6 +271,7 @@ def main():
             "Regime Analysis",
             "Holdings",
             "Live Signals",
+            "Paper Trading",
             "Monte Carlo",
             "Downloads",
         ]
@@ -347,39 +379,47 @@ def main():
         )
 
         st.plotly_chart(fig, use_container_width=True)
-
     with tab2:
         st.subheader("Walk-Forward Results")
 
-        if not walk_forward_df.empty:
-            st.dataframe(walk_forward_df, use_container_width=True)
+        if selected_strategy_view == "Production Cross-Sectional":
+            display_wf_df = walk_forward_df
+            display_backtests_df = wf_backtests_df
+        else:
+            display_wf_df = regime_wf_df
+            display_backtests_df = regime_backtests_df
 
-            if "fold" in walk_forward_df.columns:
+        st.caption(f"Viewing: {selected_strategy_view}")
+
+        if not display_wf_df.empty:
+            st.dataframe(display_wf_df, use_container_width=True)
+
+            if "fold" in display_wf_df.columns:
                 selected_fold = st.selectbox(
                     "Select Fold",
-                    options=walk_forward_df["fold"].unique(),
+                    options=display_wf_df["fold"].unique(),
                 )
 
-                fold_row = walk_forward_df[
-                    walk_forward_df["fold"] == selected_fold
+                fold_row = display_wf_df[
+                    display_wf_df["fold"] == selected_fold
                 ]
 
                 st.write(fold_row)
 
             fig = px.bar(
-                walk_forward_df,
+                display_wf_df,
                 x="fold",
                 y=selected_metric,
-                title=f"Walk-Forward {selected_metric} by Fold",
+                title=f"{selected_strategy_view}: Walk-Forward {selected_metric} by Fold",
             )
 
             st.plotly_chart(fig, use_container_width=True)
 
             fig = px.bar(
-                walk_forward_df,
+                display_wf_df,
                 x="fold",
                 y="max_drawdown",
-                title="Walk-Forward Max Drawdown by Fold",
+                title=f"{selected_strategy_view}: Walk-Forward Max Drawdown by Fold",
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -392,26 +432,36 @@ def main():
                 "max_drawdown",
             ]
 
+            available_avg_cols = [
+                col for col in avg_cols
+                if col in display_wf_df.columns
+            ]
+
             st.subheader("Average Walk-Forward Metrics")
 
             st.dataframe(
-                walk_forward_df[avg_cols].mean().to_frame("average"),
+                display_wf_df[available_avg_cols].mean().to_frame("average"),
                 use_container_width=True,
             )
         else:
-            st.warning("No walk-forward metrics file found.")
+            st.warning(
+                f"No walk-forward metrics found for {selected_strategy_view}."
+            )
 
         st.subheader("Fold-by-Fold Equity Curves")
 
-        if not wf_backtests_df.empty and "fold" in wf_backtests_df.columns:
+        if (
+            not display_backtests_df.empty
+            and "fold" in display_backtests_df.columns
+        ):
             selected_folds = st.multiselect(
                 "Select folds to plot",
-                options=sorted(wf_backtests_df["fold"].unique()),
-                default=sorted(wf_backtests_df["fold"].unique()),
+                options=sorted(display_backtests_df["fold"].unique()),
+                default=sorted(display_backtests_df["fold"].unique()),
             )
 
-            fold_plot_df = wf_backtests_df[
-                wf_backtests_df["fold"].isin(selected_folds)
+            fold_plot_df = display_backtests_df[
+                display_backtests_df["fold"].isin(selected_folds)
             ].copy()
 
             fig = px.line(
@@ -419,13 +469,13 @@ def main():
                 x="date",
                 y="capital",
                 color="fold",
-                title="Walk-Forward Equity Curves",
+                title=f"{selected_strategy_view}: Walk-Forward Equity Curves",
             )
 
             st.plotly_chart(fig, use_container_width=True)
         else:
             st.info(
-                "No fold equity parquet found. Run scripts/run_walk_forward.py to create fold equity curves."
+                f"No fold equity parquet found for {selected_strategy_view}."
             )
 
     with tab3:
@@ -548,6 +598,52 @@ def main():
             )
 
     with tab7:
+        st.subheader("Paper Trading Ledger")
+
+        if not paper_ledger_df.empty:
+            paper_ledger_df["date"] = pd.to_datetime(paper_ledger_df["date"])
+
+            latest_paper_date = paper_ledger_df["date"].max()
+            latest_rows = paper_ledger_df[
+                paper_ledger_df["date"] == latest_paper_date
+            ].copy()
+
+            latest_capital = latest_rows["paper_capital"].iloc[0]
+
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric("Latest Paper Date", str(latest_paper_date.date()))
+            col2.metric("Paper Capital", f"${latest_capital:,.0f}")
+            col3.metric("Active Positions", len(latest_rows))
+
+            st.subheader("Latest Paper Positions")
+            st.dataframe(latest_rows, use_container_width=True)
+
+            fig = px.bar(
+                latest_rows,
+                x="ticker",
+                y="dollar_allocation",
+                title="Latest Paper Dollar Allocation",
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.subheader("Full Paper Trading Ledger")
+            st.dataframe(paper_ledger_df, use_container_width=True)
+
+            st.download_button(
+                "Download Paper Trading Ledger CSV",
+                paper_ledger_df.to_csv(index=False),
+                file_name="paper_trading_ledger.csv",
+                mime="text/csv",
+                key="download_paper_trading_ledger",
+            )
+        else:
+            st.warning(
+                "No paper trading ledger found. Run scripts/update_paper_trading_ledger.py first."
+            )
+
+    with tab8:
         st.subheader("Monte Carlo Simulation")
 
         st.write(
@@ -623,7 +719,7 @@ def main():
             f"${final_values.quantile(0.95):,.0f}",
         )
 
-    with tab8:
+    with tab9:
         st.subheader("Downloadable CSVs")
 
         st.download_button(
