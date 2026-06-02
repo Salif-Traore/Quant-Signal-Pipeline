@@ -97,11 +97,11 @@ def main():
     df = df.sort_values(["date", "ticker"])
 
     min_exposures = [
-        0.25,
-        0.50,
+        0.60,
         0.70,
-        0.85,
-        1.00,
+        0.70,
+        0.80,
+        0.90,
     ]
 
     results = []
