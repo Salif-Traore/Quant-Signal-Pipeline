@@ -246,6 +246,7 @@ The production strategy generated higher risk-adjusted returns than SPY over the
 <img src="https://github.com/user-attachments/assets/3cbd65a6-d9ac-4da4-bba6-5ead64451748" width="900"/>
 
 Average Walk-Forward Results:
+
 • Annualized Return: 14.38%
 • Sharpe Ratio: 1.03
 • Maximum Drawdown: -4.67%
