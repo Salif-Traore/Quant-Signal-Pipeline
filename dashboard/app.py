@@ -30,6 +30,7 @@ BREADTH_PATH = PROJECT_ROOT / "data" / "research" / "momentum_breadth.csv"
 REGIME_WF_PATH = PROJECT_ROOT / "data" / "research" / "candidate_v3_walk_forward.csv"
 REGIME_BACKTEST_PATH = PROJECT_ROOT / "data" / "research" / "candidate_v3_backtests.parquet"
 LIVE_SIGNALS_PATH = PROJECT_ROOT / "data" / "live" / "latest_signals.csv"
+SIGNAL_ATTRIBUTION_PATH = PROJECT_ROOT / "data" / "research" / "signal_attribution.csv"
 
 
 st.set_page_config(
@@ -167,6 +168,7 @@ def main():
     breadth_df = load_csv(BREADTH_PATH)
     live_signals_df = load_csv(LIVE_SIGNALS_PATH)
     paper_ledger_df = load_csv(PAPER_LEDGER_PATH)
+    signal_attribution_df = load_csv(SIGNAL_ATTRIBUTION_PATH)
 
     min_date = backtest_df["date"].min().date()
     max_date = backtest_df["date"].max().date()
@@ -263,7 +265,7 @@ def main():
     col4.metric("Sharpe Ratio", f"{sharpe:.2f}")
     col5.metric("Max Drawdown", format_pct(max_drawdown))
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs(
         [
             "Performance",
             "Walk-Forward",
@@ -272,6 +274,7 @@ def main():
             "Holdings",
             "Live Signals",
             "Paper Trading",
+            "Signal Attribution",
             "Monte Carlo",
             "Downloads",
         ]
@@ -644,6 +647,71 @@ def main():
             )
 
     with tab8:
+        st.subheader("Signal Attribution")
+
+        st.write(
+            "This tab shows which tickers contributed the most to the strategy's historical performance."
+        )
+
+        if not signal_attribution_df.empty:
+            st.dataframe(
+                signal_attribution_df,
+                use_container_width=True,
+            )
+
+            top_contributors = signal_attribution_df.sort_values(
+                "total_contribution",
+                ascending=False,
+            ).head(10)
+
+            fig = px.bar(
+                top_contributors,
+                x="ticker",
+                y="total_contribution",
+                title="Top Strategy Contributors",
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            fig = px.bar(
+                signal_attribution_df.sort_values(
+                    "total_contribution",
+                    ascending=True,
+                ),
+                x="total_contribution",
+                y="ticker",
+                orientation="h",
+                title="Contribution by Ticker",
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            if "contribution_pct_of_total" in signal_attribution_df.columns:
+                fig = px.bar(
+                    signal_attribution_df.sort_values(
+                        "contribution_pct_of_total",
+                        ascending=False,
+                    ),
+                    x="ticker",
+                    y="contribution_pct_of_total",
+                    title="Percent of Total Contribution by Ticker",
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            st.download_button(
+                "Download Signal Attribution CSV",
+                signal_attribution_df.to_csv(index=False),
+                file_name="signal_attribution.csv",
+                mime="text/csv",
+                key="download_signal_attribution",
+            )
+
+        else:
+            st.warning(
+                "No signal attribution file found. Run scripts/signal_attribution.py first."
+            )
+    with tab9:
         st.subheader("Monte Carlo Simulation")
 
         st.write(
@@ -719,7 +787,7 @@ def main():
             f"${final_values.quantile(0.95):,.0f}",
         )
 
-    with tab9:
+    with tab10:
         st.subheader("Downloadable CSVs")
 
         st.download_button(
@@ -768,6 +836,15 @@ def main():
                 vol_sweep_df.to_csv(index=False),
                 file_name="volatility_filter_sweep.csv",
                 mime="text/csv",
+            )
+
+        if not signal_attribution_df.empty:
+            st.download_button(
+                "Download Signal Attribution CSV",
+                signal_attribution_df.to_csv(index=False),
+                file_name="signal_attribution.csv",
+                mime="text/csv",
+                key="downloads_tab_signal_attribution",
             )
 
         if not breadth_df.empty:
