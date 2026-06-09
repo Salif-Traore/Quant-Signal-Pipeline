@@ -231,7 +231,7 @@ Historical performance was decomposed to identify which assets contributed most 
 > Key Result: The production strategy generated a 0.85 Sharpe ratio versus SPY's 0.69 while experiencing lower volatility and smaller drawdowns.
 ## Strategy vs Benchmarks
 
-The chart below compares the production strategy against SPY and QQQ from July 2021 through May 2026.
+The chart below compares the production strategy against SPY and QQQ over the full research period from July 2021 through May 2026.
 
 <img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" width="900"/>
 
@@ -245,7 +245,11 @@ The production strategy generated higher risk-adjusted returns than SPY over the
 
 <img src="https://github.com/user-attachments/assets/3cbd65a6-d9ac-4da4-bba6-5ead64451748" width="900"/>
 
-Walk-forward validation was performed using rolling out-of-sample test windows. Positive Sharpe ratios across all validation periods suggest the strategy's performance was not dependent on a single historical market environment.
+Average Walk-Forward Results:
+• Annualized Return: 14.38%
+• Sharpe Ratio: 1.03
+• Maximum Drawdown: -4.67%
+• Positive Fold Rate: 68.75%
 
 Walk-forward validation was performed using rolling out-of-sample test periods. Positive Sharpe ratios across all folds suggest the strategy's performance was not driven by a single historical market regime.
 
