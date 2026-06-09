@@ -5,7 +5,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
 
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from configs.config import (
     INITIAL_CAPITAL,
@@ -206,44 +205,31 @@ def main():
             ignore_index=True,
         )
 
-        plt.figure(figsize=(12, 6))
-
-        for fold in combined["fold"].unique():
-
-            fold_df = combined[
-                combined["fold"] == fold
-            ]
-
-            plt.plot(
-                fold_df["date"],
-                fold_df["capital"],
-                label=f"Fold {fold}",
-            )
-
-        plt.title(
-            "Walk-Forward Equity Curves"
+        walk_forward_output_dir = (
+            PROJECT_ROOT
+            / "data"
+            / "backtests"
+            / "walk_forward"
         )
 
-        plt.xlabel("Date")
-        plt.ylabel("Capital")
-
-        plt.legend()
-
-        chart_path = (
-            output_dir
-            / "walk_forward_equity_curves.png"
+        walk_forward_output_dir.mkdir(
+            parents=True,
+            exist_ok=True,
         )
 
-        plt.tight_layout()
+        backtest_path = (
+            walk_forward_output_dir
+            / "walk_forward_backtests.parquet"
+        )
 
-        plt.savefig(chart_path)
-
-        plt.close()
+        combined.to_parquet(
+            backtest_path,
+            index=False,
+        )
 
         print("\nSaved:")
         print(metrics_path)
-        print(chart_path)
-
+        print(backtest_path)  
 
 if __name__ == "__main__":
     main()
