@@ -232,6 +232,7 @@ Historical performance was decomposed to identify which assets contributed most 
 ## Strategy vs Benchmarks
 
 <img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" width="900"/>
+
 The strategy outperformed SPY on a risk-adjusted basis over the test period while maintaining lower volatility and smaller drawdowns. QQQ generated higher absolute returns, reflecting the strong concentration of mega-cap technology performance during the latter portion of the sample.
 *Portfolio growth from July 2021 through May 2026 compared against SPY and QQQ benchmarks.*
 
