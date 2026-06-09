@@ -228,8 +228,12 @@ Historical performance was decomposed to identify which assets contributed most 
 ---
 
 # Current Performance
-<img width="658" height="351" alt="Screenshot_strategy" src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" />
-<img width="928" height="734" alt="Screenshot 2026-06-09 171516" src="https://github.com/user-attachments/assets/3cbd65a6-d9ac-4da4-bba6-5ead64451748" />
+
+<img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" />
+
+<br><br>
+
+<img src="https://github.com/user-attachments/assets/3cbd65a6-d9ac-4da4-bba6-5ead64451748" />
 
 
 Production Strategy Results:
@@ -252,9 +256,6 @@ SPY Benchmark:
 | Sharpe Ratio      | 0.69    |
 | Max Drawdown      | -25.36% |
 
-![Equity curve vs SPY benchmark](assets/equity_curve.png)
-
-![Walk-forward validation](assets/walk_forward.png)
 
 ---
 
