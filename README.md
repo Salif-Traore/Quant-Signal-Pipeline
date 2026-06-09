@@ -226,9 +226,9 @@ Historical performance was decomposed to identify which assets contributed most 
 * Signal attribution
 
 ---
-> Key Result: The production strategy generated a 0.85 Sharpe ratio versus SPY's 0.69 while experiencing lower volatility and smaller drawdowns.
-# Current Performance
 
+# Current Performance
+> Key Result: The production strategy generated a 0.85 Sharpe ratio versus SPY's 0.69 while experiencing lower volatility and smaller drawdowns.
 ## Strategy vs Benchmarks
 
 The chart below compares the production strategy against SPY and QQQ from July 2021 through May 2026.
@@ -236,13 +236,16 @@ The chart below compares the production strategy against SPY and QQQ from July 2
 <img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" width="900"/>
 
 <p>
-The strategy outperformed SPY on a risk-adjusted basis over the test period while maintaining lower volatility and smaller drawdowns. QQQ generated higher absolute returns, reflecting the strong concentration of mega-cap technology performance during the latter portion of the sample.
+The production strategy generated higher risk-adjusted returns than SPY over the test period while maintaining lower volatility and smaller drawdowns. QQQ produced higher absolute returns, reflecting the strong concentration of mega-cap technology performance during the latter portion of the sample.
+        
 </p>
-*Portfolio growth from July 2021 through May 2026 compared against SPY and QQQ benchmarks.*
+*Portfolio growth from July 2021 through May 2026. Results are shown relative to SPY and QQQ benchmarks.*
 
 ## Walk-Forward Validation
 
 <img src="https://github.com/user-attachments/assets/3cbd65a6-d9ac-4da4-bba6-5ead64451748" width="900"/>
+
+Walk-forward validation was performed using rolling out-of-sample test windows. Positive Sharpe ratios across all validation periods suggest the strategy's performance was not dependent on a single historical market environment.
 
 Walk-forward validation was performed using rolling out-of-sample test periods. Positive Sharpe ratios across all folds suggest the strategy's performance was not driven by a single historical market regime.
 
