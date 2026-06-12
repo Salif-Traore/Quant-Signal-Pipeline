@@ -8,7 +8,7 @@ A modular quantitative research platform for developing, testing, and evaluating
 
 This project started with a simple question:
 
-**Can **systematic momentum strategies generate superior risk-adjusted returns relative to passive benchmarks?
+**Can systematic momentum strategies generate superior risk-adjusted returns relative to passive benchmarks?**
 
 Rather than attempting to predict markets through intuition, news interpretation, or subjective judgment, I built a repeatable quantitative research process capable of identifying opportunities, constructing portfolios, validating strategies, and generating live investment signals.
 
@@ -72,7 +72,7 @@ EURUSD=X - Euro/ U.S. Dollar
 
 # Key Research Findings
 
-* Cross-sectional momentum consistently outperformed the time-series momentum variants tested during this project.
+* Cross-sectional momentum consistently outperformed the time-series momentum variants tested.
 * The strategy underperforms QQQ over the full period but does so with meaningfully lower volatility and drawdown.
 * Adding positive-momentum filters improved signal quality in some environments but did not consistently improve overall portfolio performance.
 * The upweighting of AGG and TLT introduces duration risk in rising rate environments — a known vulnerability of the strategy
