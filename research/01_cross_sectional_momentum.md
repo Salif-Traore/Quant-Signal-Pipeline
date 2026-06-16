@@ -1,8 +1,8 @@
-\# Cross-Sectional Momentum Research
+# Cross-Sectional Momentum Research
 
 
 
-\## Hypothesis
+## Hypothesis
 
 
 
@@ -10,7 +10,7 @@ Assets that have outperformed their peers over the recent past will continue to 
 
 
 
-\## Methodology
+## Methodology
 
 
 
@@ -22,7 +22,7 @@ The portfolio was rebalanced monthly.
 
 
 
-\## Results
+## Results
 
 
 
@@ -30,7 +30,7 @@ The strategy generated positive risk-adjusted returns and outperformed SPY on a 
 
 
 
-\## Conclusion
+## Conclusion
 
 
 
