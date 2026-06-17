@@ -1,6 +1,37 @@
+**Disclaimer**
+This project is for **educational and research purposes only**. It does not constitute real-world investment advice, financial advice, or a recommendation to buy or sell any securities or assets. 
+
+Past performance is not indicative of future results. All backtested and simulated results shown are hypothetical and may not reflect real-world trading outcomes due to factors such as slippage, liquidity, changing market conditions, and execution costs.
+
+Use this code and any signals at your own risk. The author assumes no responsibility for any financial losses incurred from the use of this software.
+
+---
+
 # Quant Signal Pipeline
 
-A modular quantitative research platform for developing, testing, and evaluating systematic momentum-based investment strategies across multiple asset classes.
+A modular quantitative research platform for developing, testing, and evaluating systematic investment signals across multiple asset classes.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Strategy](#strategy)
+- [Research Universe](#research-universe)
+- [Key Research Findings](#key-research-findings)
+- [Pipeline Architecture](#pipeline-architecture)
+- [Feature Engineering](#feature-engineering)
+- [Research Framework](#research-framework)
+- [Research Results](#research-results)
+- [Walk-Forward Validation](#walk-forward-validation)
+- [Research Notebooks](#research-notebooks)
+- [Limitations](#limitations)
+- [Lessons Learned](#lessons-learned)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Running the Pipeline](#running-the-pipeline)
+- [Technologies Used](#technologies-used)
+- [Future Improvements](#future-improvements)
+- [Author](#author)
+
 
 ---
 
@@ -8,21 +39,11 @@ A modular quantitative research platform for developing, testing, and evaluating
 
 This project started with a simple question:
 
-**Can systematic momentum strategies generate superior risk-adjusted returns relative to passive benchmarks?**
+**Can systematic momentum signals survive rigorous testing once portfolio construction, transaction costs, and out-of-sample validation are introduced?**
 
-Rather than attempting to predict markets through intuition, news interpretation, or subjective judgment, I built a repeatable quantitative research process capable of identifying opportunities, constructing portfolios, validating strategies, and generating live investment signals.
+Rather than relying on discretionary market forecasts, this project explores whether momentum-based investment signals can be transformed into a repeatable research process.
 
-Over the course of this project, I built a complete end-to-end research platform in Python that:
-
-* Creates a repeatable process for collecting, validating, and storing market data so research can be conducted on a reliable foundation.
-* Transforms raw price data into momentum and risk features that can be tested as potential sources of investment signal.
-* Converts research hypotheses into systematic trading signals that can be evaluated objectively.
-* Constructs portfolios using explicit risk-allocation rules rather than discretionary position sizing.
-* Simulates historical performance to measure how strategies would have behaved across different market environments.
-* Evaluates strategy robustness through walk-forward testing and out-of-sample validation.
-* Incorporates transaction costs to better approximate real-world implementation.
-* Analyzes the drivers of performance to understand which signals and assets contributed to results.
-* Produces live signals and research outputs through an interactive dashboard for ongoing monitoring.
+The platform includes data collection, feature engineering, signal generation, portfolio construction, backtesting, walk-forward validation, transaction cost modeling, performance attribution, and an interactive dashboard.
 
 ---
 
@@ -33,25 +54,27 @@ The current production strategy is based on **cross-sectional momentum**.
 Each month:
 
 1. Assets are ranked using momentum signals.
-2. The strongest assets are selected.
+2. The highest-ranked assets become eligible for portfolio inclusion.
 3. Portfolio weights are determined using inverse-volatility weighting.
 4. The portfolio is rebalanced monthly.
 5. Performance is tracked through a full backtesting framework.
 
 The strategy seeks to allocate capital toward assets demonstrating the strongest relative strength while controlling risk through volatility-based position sizing.
 
-### Research Universe
+---
+
+# Research Universe
 
 The portfolio trades across multiple asset classes:
 
-* Equities
-* ETFs
-* Commodities
-* Foreign Exchange
-* Cryptocurrency
-* Fixed Income
+- Equities
+- ETFs
+- Commodities
+- Foreign Exchange
+- Cryptocurrency
+- Fixed Income
 
-Example assets include:
+**Example assets include:**
 
 ```text
 SPY - SPDR S&P 500 ETF
@@ -72,17 +95,24 @@ EURUSD=X - Euro/ U.S. Dollar
 
 # Key Research Findings
 
-* Cross-sectional momentum consistently outperformed the time-series momentum variants tested.
-* The strategy underperforms QQQ over the full period but does so with meaningfully lower volatility and drawdown.
-* Adding positive-momentum filters improved signal quality in some environments but did not consistently improve overall portfolio performance.
-* The upweighting of AGG and TLT introduces duration risk in rising rate environments — a known vulnerability of the strategy
-* Regime-based exposure scaling reduced drawdowns during certain periods but underperformed the production strategy during walk-forward testing.
-* The strategy remained profitable after incorporating realistic transaction cost assumptions, suggesting results were not solely driven by excessive trading.
-* Performance was concentrated among a relatively small number of strong momentum winners rather than being evenly distributed across all holdings.
-* Walk-forward validation produced results that were directionally consistent with in-sample testing, providing evidence that the strategy retained some robustness outside the original research period.
-* Signal attribution identified GLD, AAPL, USO, and QQQ as the largest contributors to overall portfolio performance.
+- Cross-sectional momentum produced stronger results than the time-series momentum variants tested during this project.
+- Adding positive-momentum filters improved signal quality in some environments but did not consistently improve overall portfolio performance.
+- Regime-based exposure scaling reduced drawdowns during certain periods but underperformed the production strategy during walk-forward testing.
+- The strategy remained profitable after incorporating realistic transaction cost assumptions.
+- Signal attribution identified GLD, AAPL, USO, and QQQ as the largest contributors to overall portfolio performance.
 
 ---
+
+## Implementation Statistics
+
+| Metric | Value |
+|----------|----------|
+| Rebalance Frequency | Monthly |
+| Average Positions Held | 3.0 |
+| Maximum Positions Held | 5 |
+| Average Monthly Turnover | 15.47% |
+
+A relatively modest turnover profile helped limit the impact of transaction costs during testing.
 
 # Pipeline Architecture
 
@@ -93,7 +123,7 @@ configs/
 features/
 signals/
 portfolio/
-back testing/
+backtesting/
 reports/
 dashboard/
 research/
@@ -111,7 +141,7 @@ Signal Generation
         ↓
 Portfolio Construction
         ↓
-Back testing
+Backtesting
         ↓
 Research Validation
         ↓
@@ -124,16 +154,18 @@ Live Signals
 
 # Feature Engineering
 
+All features are calculated using only information that would have been available at the time of signal generation. This helps reduce look-ahead bias and better reflects how signals would have been generated in a live research environment.
+
 The feature pipeline generates:
 
-* 1-Month Momentum
-* 3-Month Momentum
-* 6-Month Momentum
-* 12-Month Momentum
-* 1-Month Volatility
-* 3-Month Volatility
-* Volatility-Adjusted Momentum
-* Rolling Sharpe Ratio
+- 1-Month Momentum
+- 3-Month Momentum
+- 6-Month Momentum
+- 12-Month Momentum
+- 1-Month Volatility
+- 3-Month Volatility
+- Volatility-Adjusted Momentum
+- Rolling Sharpe Ratio
 
 All features are stored in Parquet format for efficient research workflows.
 
@@ -143,116 +175,47 @@ All features are stored in Parquet format for efficient research workflows.
 
 A major focus of this project was research and validation.
 
-The following ideas were researched and tested:
+The following ideas were implemented and tested:
 
-### Cross-Sectional Momentum
-
-The production strategy used throughout the pipeline.
-
-### Time-Series Momentum (TSMOM)
-
-A separate momentum framework tested against the production strategy.
-
-### TSMOM Filters
-
-Positive momentum filters were applied to determine whether signal quality could be improved.
-
-### Regime-Based Exposure Scaling
-
-Portfolio exposure was dynamically adjusted based on momentum breadth and market conditions.
-
-### Walk-Forward Validation
-
-Strategies were tested across rolling out-of-sample periods to reduce overfitting risk.
-
-### Transaction Cost Analysis
-
-Realistic transaction costs were incorporated to evaluate robustness under trading friction.
-
-### Factor Exposure Analysis
-
-Strategy returns were compared against market, momentum, and volatility factors.
-
-### Signal Attribution
-
-Historical performance was decomposed to identify which assets contributed most to returns.
+- Cross-Sectional Momentum
+- Time-Series Momentum (TSMOM)
+- Positive Momentum Filters
+- Regime-Based Exposure Scaling
+- Walk-Forward Validation
+- Transaction Cost Analysis
+- Factor Exposure Analysis
+- Signal Attribution
 
 ---
 
-# Current Features
+# Research Results
 
-## Data Pipeline
+> Performance statistics are presented for research purposes only and should not be interpreted as evidence of future profitability.
 
-* Automated market data downloads
-* Data validation
-* Parquet storage
-* Modular architecture
-
-## Signal Layer
-
-* Cross-sectional momentum ranking
-* Asset selection framework
-* Monthly signal generation
-
-## Portfolio Construction
-
-* Inverse-volatility weighting
-* Risk-adjusted allocation
-* Monthly rebalancing
-
-## Backtesting
-
-* Vectorized simulation engine
-* Benchmark comparison
-* Equity curve generation
-* Drawdown analysis
-* Transaction cost modeling
-
-## Research Validation
-
-* Parameter sweeps
-* Walk-forward testing
-* Regime analysis
-* Factor exposure analysis
-* Signal attribution analysis
-
-## Dashboard
-
-* Performance monitoring
-* Walk-forward visualization
-* Research results
-* Live signals
-* Paper trading ledger
-* Signal attribution
-
----
-
-# Current Performance
-> Key Result: The production strategy generated a 0.85 Sharpe ratio versus SPY's 0.69 while experiencing lower volatility and smaller drawdowns.
 ## Strategy vs Benchmarks
 
 The chart below compares the production strategy against SPY and QQQ over the full research period from July 2021 through May 2026.
 
-<img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" width="900"/>
+<img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" width="900" alt="Strategy vs SPY and QQQ equity curve">
 
 <p>
-The production strategy generated higher risk-adjusted returns than SPY over the test period while maintaining lower volatility and smaller drawdowns. QQQ produced higher absolute returns, reflecting the strong concentration of mega-cap technology performance during the latter portion of the sample.
+        
+The strategy produced a higher historical Sharpe ratio than SPY over the sample period while exhibiting lower volatility and drawdown. QQQ generated higher absolute returns during the same period.
         
 </p>
 *Portfolio growth from July 2021 through May 2026. Results are shown relative to SPY and QQQ benchmarks.*
 
 ## Walk-Forward Validation
 
-<img src="https://github.com/user-attachments/assets/3cbd65a6-d9ac-4da4-bba6-5ead64451748" width="900"/>
+<img src="https://github.com/user-attachments/assets/3cbd65a6-d9ac-4da4-bba6-5ead64451748" width="900" alt="Walk-Forward Validation results">
 
 Average Walk-Forward Results:
-
 • Annualized Return: 14.38%
 • Sharpe Ratio: 1.03
 • Maximum Drawdown: -4.67%
 • Positive Fold Rate: 68.75%
 
-Walk-forward validation was performed using rolling out-of-sample test periods. Positive Sharpe ratios across all folds suggest the strategy's performance was not driven by a single historical market regime.
+Walk-forward validation was performed using rolling out-of-sample test periods. Positive Sharpe ratios across validation folds provide some evidence that performance was not entirely dependent on a single historical market environment, although the limited sample size warrants caution.
 
 Production Strategy Results:
 
@@ -274,23 +237,16 @@ SPY Benchmark:
 | Sharpe Ratio      | 0.69    |
 | Max Drawdown      | -25.36% |
 
-
 ---
 
 # Research Notebooks
 
-The complete research process is documented in:
-
-```text
-research/
-
-01_cross_sectional_momentum.md
-02_tsmom_research.md
-03_tsmom_filter_research.md
-04_regime_scaling_research.md
-05_transaction_cost_analysis.md
-06_signal_attribution_analysis.md
-```
+- [Cross-Sectional Momentum Research](research/01_cross_sectional_momentum.md)
+- [TSMOM Research](research/02_tsmom_research.md)
+- [TSMOM Filter Research](research/03_tsmom_filter_research.md)
+- [Regime Scaling Research](research/04_regime_scaling_research.md)
+- [Transaction Cost Analysis](research/05_transaction_cost_analysis.md)
+- [Signal Attribution Analysis](research/06_signal_attribution_analysis.md)
 
 Each notebook includes:
 
@@ -298,6 +254,105 @@ Each notebook includes:
 * Methodology
 * Results
 * Conclusions
+
+---
+
+# Limitations
+
+This project was built as a research and learning exercise rather than a production trading system.
+
+Current limitations include:
+
+- Relatively small asset universe
+- Limited historical sample period
+- Simplified transaction cost assumptions
+- No market impact modeling
+- No short-selling framework
+- No live capital deployment history
+- Reliance on daily data rather than intraday execution data
+
+As a result, backtested results should be interpreted cautiously and may not reflect future performance.
+
+---
+
+# Lessons Learned
+
+Several observations emerged during the research process:
+
+- Portfolio construction can matter as much as signal generation.
+- Strong in-sample performance frequently weakens during walk-forward testing.
+- Transaction costs can materially impact strategy viability.
+- Risk management decisions often have a larger effect on outcomes than individual signals.
+- Robust research processes are more valuable than individual backtests.
+  
+Many ideas that appeared attractive initially were ultimately rejected after additional testing, reinforcing the importance of out-of-sample validation.
+
+---
+
+# Prerequisites
+  
+- Python 3.11+
+- UV package manager
+
+Install UV:
+
+```bash
+pip install uv
+```
+
+For additional installation options, see:
+https://docs.astral.sh/uv/
+
+---
+
+# Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/quant-signal-pipeline.git
+cd quant-signal-pipeline
+```
+
+Create a virtual environment using UV:
+
+```bash
+uv venv
+```
+
+Activate the virtual environment:
+
+**Windows (PowerShell)**
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+**Windows (Command Prompt)**
+
+```cmd
+.venv\Scripts\activate.bat
+```
+
+**macOS / Linux**
+
+```bash
+source .venv/bin/activate
+```
+
+Install project dependencies:
+
+```bash
+uv sync
+```
+
+Verify the installation:
+
+```bash
+uv run python --version
+```
+
+You should now be ready to run the research pipeline and dashboard. 
 
 ---
 
@@ -343,15 +398,15 @@ uv run streamlit run dashboard/app.py
 
 # Technologies Used
 
-* Python
-* Pandas
-* NumPy
-* Plotly
-* Streamlit
-* Parquet
-* Git
-* GitHub
-* UV
+- Python
+- Pandas
+- NumPy
+- Plotly
+- Streamlit
+- Parquet
+- Git
+- GitHub
+- UV
 
 ---
 
@@ -359,21 +414,24 @@ uv run streamlit run dashboard/app.py
 
 Potential future research directions include:
 
-* Multi-factor models
-* Enhanced factor attribution
-* Alternative portfolio construction techniques
-* Additional asset universes
-* Broker integration
-* Automated cloud deployment
-* Live paper trading automation
+- Multi-factor models
+- Enhanced factor attribution
+- Alternative portfolio construction techniques
+- Additional asset universes
+- Broker integration
+- Automated cloud deployment
+- Live paper trading automation
 
 ---
 
 # Author
-
 **Salif Traoré**
-
-Economics & Finance
+Economics Major & Finance Minor
 Syracuse University
+Built as an independent research project to learn systematic investment research, portfolio construction, and quantitative analysis.
 
-This project demonstrates the ability to take an investment hypothesis from initial idea through data collection, feature engineering, portfolio construction, validation, and performance analysis. It reflects a research process focused on testing assumptions, evaluating evidence, and refining conclusions through systematic experimentation.
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
