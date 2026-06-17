@@ -1,8 +1,8 @@
-\# Time-Series Momentum Research
+# Time-Series Momentum Research
 
 
 
-\## Hypothesis
+## Hypothesis
 
 
 
@@ -10,7 +10,7 @@ Assets with positive historical returns should continue trending higher, while a
 
 
 
-\## Methodology
+## Methodology
 
 
 
@@ -22,7 +22,7 @@ Assets were held only when momentum exceeded a specified threshold.
 
 
 
-\## Results
+## Results
 
 
 
@@ -34,7 +34,7 @@ Walk-forward testing showed weaker consistency and lower Sharpe ratios than the 
 
 
 
-\## Conclusion
+## Conclusion
 
 
 
