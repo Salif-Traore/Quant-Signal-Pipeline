@@ -1,8 +1,8 @@
-\# Transaction Cost Analysis
+# Transaction Cost Analysis
 
 
 
-\## Hypothesis
+## Hypothesis
 
 
 
@@ -10,7 +10,7 @@ A robust strategy should remain profitable after incorporating realistic transac
 
 
 
-\## Methodology
+## Methodology
 
 
 
@@ -22,7 +22,7 @@ Performance metrics were recalculated after accounting for turnover-related cost
 
 
 
-\## Results
+## Results
 
 
 
@@ -30,7 +30,7 @@ Returns declined as transaction costs increased. However, the strategy remained 
 
 
 
-\## Conclusion
+## Conclusion
 
 
 
