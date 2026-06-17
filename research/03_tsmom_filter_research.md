@@ -1,8 +1,8 @@
-\# TSMOM Filter Research
+# TSMOM Filter Research
 
 
 
-\## Hypothesis
+## Hypothesis
 
 
 
@@ -10,7 +10,7 @@ Removing assets with negative momentum may improve overall portfolio quality.
 
 
 
-\## Methodology
+## Methodology
 
 
 
@@ -18,7 +18,7 @@ A positive momentum filter was applied before cross-sectional ranking. Multiple 
 
 
 
-\## Results
+## Results
 
 
 
@@ -30,7 +30,7 @@ The 1% threshold produced the strongest overall results among the tested values.
 
 
 
-\## Conclusion
+## Conclusion
 
 
 
