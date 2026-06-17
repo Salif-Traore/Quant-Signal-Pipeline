@@ -1,8 +1,8 @@
-\# Regime Scaling Research
+# Regime Scaling Research
 
 
 
-\## Hypothesis
+## Hypothesis
 
 
 
@@ -10,7 +10,7 @@ Portfolio exposure should decrease during weaker market environments and increas
 
 
 
-\## Methodology
+## Methodology
 
 
 
@@ -22,7 +22,7 @@ Several minimum exposure levels were tested including 0.60, 0.70, 0.80, 0.90, an
 
 
 
-\## Results
+## Results
 
 
 
@@ -34,7 +34,7 @@ The production strategy maintained the highest walk-forward Sharpe ratio.
 
 
 
-\## Conclusion
+## Conclusion
 
 
 
