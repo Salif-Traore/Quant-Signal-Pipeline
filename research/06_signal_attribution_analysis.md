@@ -1,8 +1,8 @@
-\# Signal Attribution Analysis
+# Signal Attribution Analysis
 
 
 
-\## Hypothesis
+## Hypothesis
 
 
 
@@ -10,7 +10,7 @@ Portfolio performance is driven by a subset of assets that contribute disproport
 
 
 
-\## Methodology
+## Methodology
 
 
 
@@ -22,7 +22,7 @@ Total contribution, average weight, and holding frequency were analyzed.
 
 
 
-\## Results
+## Results
 
 
 
@@ -34,7 +34,7 @@ Performance was concentrated among a small group of strong momentum winners rath
 
 
 
-\## Conclusion
+## Conclusion
 
 
 
