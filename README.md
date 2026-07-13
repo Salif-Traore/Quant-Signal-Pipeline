@@ -197,43 +197,55 @@ The following ideas were implemented and tested:
 The chart below compares the production strategy against SPY and QQQ over the full available research period.
 
 <img width="1268" height="450" alt="newplot (1)" src="https://github.com/user-attachments/assets/87e1f150-72bf-4e72-b14d-95e86c43e932" />
-
-        
-The strategy produced a higher historical Sharpe ratio than SPY over the sample period while exhibiting lower volatility and drawdown. SPY and QQQ generated higher absolute returns during the same period, with QQQ producing the strongest total return.
+  
+The strategy produced a slightly higher historical Sharpe ratio than SPY while exhibiting lower volatility and drawdown. SPY and QQQ generated higher absolute returns during the same period, with QQQ producing the strongest total return.
         
 *Portfolio growth over the research period. Results are shown relative to SPY and QQQ benchmarks.*
 
+### Production Strategy Results:
+
+| Metric            | Value   |
+| ----------------- | ------- |
+| Total Return      | 45.51%  |
+| Annualized Return | 7.68%  |
+| Volatility        | 12.93%  |
+| Sharpe Ratio      | 0.64    |
+| Max Drawdown      | -22.42% |
+
+### SPY Benchmark:
+
+| Metric            | Value   |
+| ----------------- | ------- |
+| Total Return      | 54.16%  |
+| Annualized Return | 9.35%  |
+| Volatility        | 16.47%  |
+| Sharpe Ratio      | 0.63    |
+| Max Drawdown      | -25.36% |
+
+### QQQ Benchmark:
+
+| Metric            | Value   |
+| ----------------- | ------- |
+| Total Return      | 91.19%  |
+| Annualized Return | 15.40%  |
+| Volatility        | 21.38%  |
+| Sharpe Ratio      | 0.78    |
+| Max Drawdown      | -33.61% |
+
 ## Walk-Forward Validation
 
-<img src="https://github.com/user-attachments/assets/3cbd65a6-d9ac-4da4-bba6-5ead64451748" width="900" alt="Walk-Forward Validation results">
+<img width="1268" height="817" alt="Screenshot 2026-07-13 153048" src="https://github.com/user-attachments/assets/e775018f-f2ad-4a0c-a746-ed1d2ff0f53b" />
 
-Average Walk-Forward Results:
-• Annualized Return: 14.38%
-• Sharpe Ratio: 1.03
-• Maximum Drawdown: -4.67%
-• Positive Fold Rate: 68.75%
-
-Walk-forward validation was performed using rolling out-of-sample test periods. Each validation fold produced a positive total return, suggesting that the strategy was not entirely dependent on the one isolated historical period, However the numbers of folds remains limited so these results should be interpreted cautiously.
-
-Production Strategy Results:
+### Average Walk-Forward Results:
 
 | Metric            | Value   |
 | ----------------- | ------- |
-| Total Return      | 66.91%  |
-| Annualized Return | 10.62%  |
-| Volatility        | 12.84%  |
-| Sharpe Ratio      | 0.85    |
-| Max Drawdown      | -21.72% |
+| Average Total Return | 10.79% |
+| Annualized Return | 22.39%  |
+| Sharpe Ratio      | 1.86    |
+| Max Drawdown      | -5.26% |
 
-SPY Benchmark:
-
-| Metric            | Value   |
-| ----------------- | ------- |
-| Total Return      | 61.64%  |
-| Annualized Return | 10.42%  |
-| Volatility        | 16.37%  |
-| Sharpe Ratio      | 0.69    |
-| Max Drawdown      | -25.36% |
+Walk-forward validation was performed using rolling out-of-sample test periods. The latest rerun produced positive returns across the available validation folds, but the number of folds remains limited, so these results should be interpreted cautiously.
 
 ---
 
