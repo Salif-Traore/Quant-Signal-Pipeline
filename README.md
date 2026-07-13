@@ -196,7 +196,7 @@ The following ideas were implemented and tested:
 
 The chart below compares the production strategy against SPY and QQQ over the full available research period.
 
-<img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" width="900" alt="Strategy vs SPY and QQQ equity curve">
+<img width="1268" height="450" alt="newplot (1)" src="https://github.com/user-attachments/assets/87e1f150-72bf-4e72-b14d-95e86c43e932" />
 
         
 The strategy produced a higher historical Sharpe ratio than SPY over the sample period while exhibiting lower volatility and drawdown. SPY and QQQ generated higher absolute returns during the same period, with QQQ producing the strongest total return.
