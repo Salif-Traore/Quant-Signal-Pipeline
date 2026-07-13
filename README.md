@@ -98,7 +98,7 @@ EURUSD=X - Euro/ U.S. Dollar
 - Cross-sectional momentum produced stronger results than the time-series momentum variants tested during this project.
 - Adding positive-momentum filters improved signal quality in some environments but did not consistently improve overall portfolio performance.
 - Regime-based exposure scaling reduced drawdowns during certain periods but underperformed the production strategy during walk-forward testing.
-- The strategy remained profitable after incorporating realistic transaction cost assumptions.
+- After the latest pipeline rerun, the production strategy generated a slightly higher Sharpe ratio than SPY while maintaining lower volatility and drawdown, although SPY and QQQ produced higher absolute returns.
 - Signal attribution identified GLD, AAPL, USO, and QQQ as the largest contributors to overall portfolio performance.
 
 ---
@@ -194,14 +194,14 @@ The following ideas were implemented and tested:
 
 ## Strategy vs Benchmarks
 
-The chart below compares the production strategy against SPY and QQQ over the full research period from July 2021 through May 2026.
+The chart below compares the production strategy against SPY and QQQ over the full available research period.
 
 <img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" width="900" alt="Strategy vs SPY and QQQ equity curve">
 
         
-The strategy produced a higher historical Sharpe ratio than SPY over the sample period while exhibiting lower volatility and drawdown. QQQ generated higher absolute returns during the same period.
+The strategy produced a higher historical Sharpe ratio than SPY over the sample period while exhibiting lower volatility and drawdown. SPY and QQQ generated higher absolute returns during the same period, with QQQ producing the strongest total return.
         
-*Portfolio growth from July 2021 through May 2026. Results are shown relative to SPY and QQQ benchmarks.*
+*Portfolio growth over the research period. Results are shown relative to SPY and QQQ benchmarks.*
 
 ## Walk-Forward Validation
 
@@ -213,7 +213,7 @@ Average Walk-Forward Results:
 • Maximum Drawdown: -4.67%
 • Positive Fold Rate: 68.75%
 
-Walk-forward validation was performed using rolling out-of-sample test periods. Positive Sharpe ratios across validation folds provide some evidence that performance was not entirely dependent on a single historical market environment, although the limited sample size warrants caution.
+Walk-forward validation was performed using rolling out-of-sample test periods. Each validation fold produced a positive total return, suggesting that the strategy was not entirely dependent on the one isolated historical period, However the numbers of folds remains limited so these results should be interpreted cautiously.
 
 Production Strategy Results:
 
