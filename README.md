@@ -198,11 +198,9 @@ The chart below compares the production strategy against SPY and QQQ over the fu
 
 <img src="https://github.com/user-attachments/assets/9956753e-36c8-495a-8d10-ab7273e58654" width="900" alt="Strategy vs SPY and QQQ equity curve">
 
-<p>
         
 The strategy produced a higher historical Sharpe ratio than SPY over the sample period while exhibiting lower volatility and drawdown. QQQ generated higher absolute returns during the same period.
         
-</p>
 *Portfolio growth from July 2021 through May 2026. Results are shown relative to SPY and QQQ benchmarks.*
 
 ## Walk-Forward Validation
@@ -310,7 +308,7 @@ https://docs.astral.sh/uv/
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/quant-signal-pipeline.git
+git clone https://github.com/Salif-Traore/Quant-Signal-Pipeline.git
 cd quant-signal-pipeline
 ```
 
@@ -398,15 +396,15 @@ uv run streamlit run dashboard/app.py
 
 # Technologies Used
 
-- Python
-- Pandas
-- NumPy
-- Plotly
-- Streamlit
-- Parquet
-- Git
-- GitHub
-- UV
+| Category | Tools |
+|-----------|-----------|
+| Programming | Python |
+| Data Processing | Pandas, NumPy |
+| Visualization | Plotly |
+| Dashboarding | Streamlit |
+| Data Storage | Parquet |
+| Version Control | Git, GitHub |
+| Environment Management | UV |
 
 ---
 
@@ -425,9 +423,11 @@ Potential future research directions include:
 ---
 
 # Author
-**Salif Traoré**
-Economics Major & Finance Minor
-Syracuse University
+
+**Salif Traoré**  
+Economics Major & Finance Minor  
+Syracuse University  
+
 Built as an independent research project to learn systematic investment research, portfolio construction, and quantitative analysis.
 
 ---
