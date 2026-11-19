@@ -15,8 +15,8 @@ from signals.momentum_signals import build_cross_sectional_momentum_signal
 from portfolio.construction import build_monthly_rebalanced_portfolio
 
 
-BACKTEST_PATH = PROJECT_ROOT / "data" / "backtests" / "portfolio_backtest_clean.parquet"
-METRICS_PATH = PROJECT_ROOT / "data" / "backtests" / "performance_metrics.csv"
+BACKTEST_PATH = PROJECT_ROOT / "data" / "backtests" / "cross_sectional_backtest.parquet"
+METRICS_PATH = PROJECT_ROOT / "data" / "backtests" / "cross_sectional_performance_metrics.csv"
 FEATURES_PATH = PROJECT_ROOT / "data" / "prepared" / "all_features.parquet"
 
 WALK_FORWARD_PATH = PROJECT_ROOT / "data" / "research" / "candidate_v2_walk_forward.csv"
